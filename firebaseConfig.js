@@ -1,11 +1,18 @@
 const admin = require('firebase-admin');
-const serviceAccount = require('./serviceAccountKey.json'); // Ajusta la ruta según la ubicación de tu archivo
+const path = require('path');
+
+// Carga las variables de entorno desde el archivo .env (en desarrollo)
+require('dotenv').config();
+
+// Configura la ruta del archivo de credenciales utilizando una variable de entorno
+const serviceAccountPath = path.resolve(process.env.FIREBASE_CREDENTIALS_PATH);
+const serviceAccount = require(serviceAccountPath); // Carga el archivo de credenciales
 
 // Inicializa Firebase con las credenciales y el bucket de almacenamiento
 try {
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
-    storageBucket: 'amigos-ef0e5.appspot.com' // Reemplaza con el ID de tu proyecto Firebase
+    storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
   });
 } catch (error) {
   console.error('Error al inicializar Firebase:', error);
