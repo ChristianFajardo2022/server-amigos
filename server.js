@@ -17,37 +17,58 @@ const upload = multer({ storage: multer.memoryStorage() });
 
 // Función para subir la imagen a Firebase Storage
 async function uploadImageToStorage(image) {
+  console.log('Subiendo imagen a Firebase Storage...');
   const imageName = `${uuidv4()}_${image.originalname}`; // Genera un nombre único para la imagen
+  console.log('Nombre de la imagen:', imageName);
+
   const file = bucket.file(imageName);
+  console.log('Archivo de bucket creado:', file.name);
 
-  await file.save(image.buffer, {
-    metadata: {
-      contentType: image.mimetype, // Especifica el tipo MIME de la imagen
-    },
-  });
+  try {
+    await file.save(image.buffer, {
+      metadata: {
+        contentType: image.mimetype, // Especifica el tipo MIME de la imagen
+      },
+    });
+    console.log('Imagen guardada en Firebase Storage');
+  } catch (error) {
+    console.error('Error al guardar la imagen en Firebase Storage:', error);
+    throw error;
+  }
 
-  return `https://storage.googleapis.com/${bucket.name}/${imageName}`; // Retorna la URL de la imagen
+  const imageUrl = `https://storage.googleapis.com/${bucket.name}/${imageName}`;
+  console.log('URL de la imagen:', imageUrl);
+  return imageUrl; // Retorna la URL de la imagen
 }
 
 // Función para guardar los datos de la compra en Firestore
 async function savePurchaseData({ usuario, email, contacto, nombre, imageUrl }) {
-  await db.collection('compras').add({
-    usuario,
-    email,
-    contacto,
-    nombre,
-    imageUrl, // URL de la imagen guardada en Firebase Storage
-  });
+  console.log('Guardando datos de la compra en Firestore...');
+  try {
+    await db.collection('compras').add({
+      usuario,
+      email,
+      contacto,
+      nombre,
+      imageUrl, // URL de la imagen guardada en Firebase Storage
+    });
+    console.log('Datos de la compra guardados en Firestore');
+  } catch (error) {
+    console.error('Error al guardar los datos en Firestore:', error);
+    throw error;
+  }
 }
 
 // Ruta para manejar la compra
 app.post('/comprar', upload.single('image'), async (req, res) => {
   try {
+    console.log('Solicitud de compra recibida:', req.body);
     const { usuario, email, contacto, nombre } = req.body; // Datos del cliente
     const image = req.file; // Imagen subida
 
     // Validación de datos
     if (!usuario || !email || !contacto || !nombre || !image) {
+      console.log('Faltan datos necesarios:', { usuario, email, contacto, nombre, image });
       return res.status(400).send('Faltan datos necesarios para realizar la compra');
     }
 

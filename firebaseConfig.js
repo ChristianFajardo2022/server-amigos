@@ -6,7 +6,16 @@ require('dotenv').config();
 
 // Configura la ruta del archivo de credenciales utilizando una variable de entorno
 const serviceAccountPath = path.resolve(process.env.FIREBASE_CREDENTIALS_PATH);
-const serviceAccount = require(serviceAccountPath); // Carga el archivo de credenciales
+console.log('Ruta del archivo de credenciales:', serviceAccountPath);
+
+let serviceAccount;
+try {
+  serviceAccount = require(serviceAccountPath); // Carga el archivo de credenciales
+  console.log('Archivo de credenciales cargado exitosamente');
+} catch (error) {
+  console.error('Error al cargar el archivo de credenciales:', error);
+  process.exit(1); // Termina el proceso si hay un error
+}
 
 // Inicializa Firebase con las credenciales y el bucket de almacenamiento
 try {
@@ -14,6 +23,7 @@ try {
     credential: admin.credential.cert(serviceAccount),
     storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
   });
+  console.log('Firebase inicializado exitosamente con el bucket:', process.env.FIREBASE_STORAGE_BUCKET);
 } catch (error) {
   console.error('Error al inicializar Firebase:', error);
   process.exit(1); // Termina el proceso si hay un error
