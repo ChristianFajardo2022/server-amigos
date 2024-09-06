@@ -125,7 +125,7 @@ app.get('/descargar-csv', async (req, res) => {
 
 
 // Ruta para manejar la subida de stockDije
-app.post('/aagregar-stock', async (req, res) => {
+app.post('/agregar-stock', async (req, res) => {
   const { stockDije } = req.body;
 
   if (!stockDije) {
@@ -153,6 +153,7 @@ app.post('/aagregar-stock', async (req, res) => {
     res.status(500).json({ message: `Error al actualizar stockDije: ${error.message}` });
   }
 });
+
 
 // Inicia el servidor
 app.listen(port, () => {
