@@ -125,31 +125,34 @@ app.get('/descargar-csv', async (req, res) => {
 
 
 // Ruta para manejar la subida de stockDije
-app.post('/agregar-stock', async (req, res) => {
+app.post('/actualizar-stock', async (req, res) => {
   const { stockDije } = req.body;
 
   if (!stockDije) {
     return res.status(400).json({ message: 'No se proporcionó el dato stockDije' });
   }
 
-  // ID del documento que deseas actualizar (puedes cambiarlo según tu necesidad)
-  const documentId = 'ID_DEL_DOCUMENTO_A_ACTUALIZAR'; // Asegúrate de colocar el ID correcto aquí
+  const documentId = 'numerosdestock'; // Cambia este ID por el correcto
 
   try {
-    // Actualiza el campo stockDije en el documento con el ID específico
     const stockRef = db.collection('stock').doc(documentId);
-    
+    const docSnapshot = await stockRef.get();
+
+    if (!docSnapshot.exists) {
+      return res.status(404).json({ message: 'El documento no existe' });
+    }
+
+    // Intenta actualizar el documento
     await stockRef.update({
       stockDije: stockDije
     });
 
     res.status(200).json({ message: 'Dato stockDije actualizado con éxito' });
   } catch (error) {
-    console.error('Error al actualizar stockDije:', error);
-    res.status(500).json({ message: 'Error al actualizar stockDije' });
+    console.error('Error al actualizar stockDije:', error.message);
+    res.status(500).json({ message: `Error al actualizar stockDije: ${error.message}` });
   }
 });
-
 
 // Inicia el servidor
 app.listen(port, () => {
