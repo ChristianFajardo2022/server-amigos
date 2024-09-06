@@ -125,7 +125,7 @@ app.get('/descargar-csv', async (req, res) => {
 
 
 // Ruta para manejar la subida de stockDije
-app.post('/actualizar-stock', async (req, res) => {
+app.post('/aagregar-stock', async (req, res) => {
   const { stockDije } = req.body;
 
   if (!stockDije) {
