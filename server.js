@@ -123,6 +123,27 @@ app.get('/descargar-csv', async (req, res) => {
   }
 });
 
+
+// Ruta para manejar la subida de stockDije
+app.post('/agregar-stock', async (req, res) => {
+  const { stockDije } = req.body;
+
+  if (!stockDije) {
+    return res.status(400).send('No se proporcionó el dato stockDije');
+  }
+
+  try {
+    await db.collection('stock').add({
+      stockDije,
+      fecha: new Date(), // Puedes agregar más campos como la fecha de inserción
+    });
+    res.status(200).send('Dato stockDije guardado con éxito');
+  } catch (error) {
+    console.error('Error al guardar stockDije en Firestore:', error);
+    res.status(500).send('Error al guardar stockDije');
+  }
+});
+
 // Inicia el servidor
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
