@@ -129,20 +129,27 @@ app.post('/agregar-stock', async (req, res) => {
   const { stockDije } = req.body;
 
   if (!stockDije) {
-    return res.status(400).send('No se proporcionó el dato stockDije');
+    return res.status(400).json({ message: 'No se proporcionó el dato stockDije' });
   }
 
+  // ID del documento que deseas actualizar (puedes cambiarlo según tu necesidad)
+  const documentId = 'ID_DEL_DOCUMENTO_A_ACTUALIZAR'; // Asegúrate de colocar el ID correcto aquí
+
   try {
-    await db.collection('stock').add({
-      stockDije,
-      fecha: new Date(), // Puedes agregar más campos como la fecha de inserción
+    // Actualiza el campo stockDije en el documento con el ID específico
+    const stockRef = db.collection('stock').doc(documentId);
+    
+    await stockRef.update({
+      stockDije: stockDije
     });
-    res.status(200).send('Dato stockDije guardado con éxito');
+
+    res.status(200).json({ message: 'Dato stockDije actualizado con éxito' });
   } catch (error) {
-    console.error('Error al guardar stockDije en Firestore:', error);
-    res.status(500).send('Error al guardar stockDije');
+    console.error('Error al actualizar stockDije:', error);
+    res.status(500).json({ message: 'Error al actualizar stockDije' });
   }
 });
+
 
 // Inicia el servidor
 app.listen(port, () => {
