@@ -100,6 +100,12 @@ app.get('/buscar', async (req, res) => {
   }
 });
 
+
+
+
+
+
+
 // Ruta para descargar los datos en CSV
 app.get('/descargar-csv', async (req, res) => {
   try {
@@ -132,7 +138,7 @@ app.post('/agregar-stock', async (req, res) => {
     return res.status(400).json({ message: 'No se proporcionó el dato stockDije' });
   }
 
-  const documentId = 'numerosdestock'; // Cambia este ID por el correcto
+  const documentId = 'numerosdestock'; 
 
   try {
     const stockRef = db.collection('stock').doc(documentId);
@@ -151,6 +157,26 @@ app.post('/agregar-stock', async (req, res) => {
   } catch (error) {
     console.error('Error al actualizar stockDije:', error.message);
     res.status(500).json({ message: `Error al actualizar stockDije: ${error.message}` });
+  }
+});
+
+
+app.get('/dijes', async (req, res) => {
+  try {
+    // Reemplaza 'numerosdestock' con el ID del documento específico si es necesario
+    const documentId = 'numerosdestock'; 
+    const stockRef = db.collection('stock').doc(documentId);
+    const docSnapshot = await stockRef.get();
+
+    if (!docSnapshot.exists) {
+      return res.status(404).json({ message: 'El documento no existe' });
+    }
+
+    const data = docSnapshot.data();
+    res.status(200).json(data);
+  } catch (error) {
+    console.error('Error al buscar datos del stock:', error.message);
+    res.status(500).send('Error al buscar datos del stock');
   }
 });
 
