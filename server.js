@@ -165,6 +165,37 @@ app.get('/dijes', async (req, res) => {
   }
 });
 
+
+// Ruta para buscar datos
+app.get('/buscar', async (req, res) => {
+  const { term } = req.query;
+
+  if (!term) {
+    return res.status(400).send('Término de búsqueda no proporcionado');
+  }
+
+  try {
+    const snapshot = await db.collection('compras').get();
+    const results = [];
+
+    snapshot.forEach((doc) => {
+      const data = doc.data();
+      if (
+        data.usuario.toLowerCase().includes(term.toLowerCase()) ||
+        data.email.toLowerCase().includes(term.toLowerCase()) ||
+        data.contacto.toLowerCase().includes(term.toLowerCase()) ||
+        data.nombre.toLowerCase().includes(term.toLowerCase())
+      ) {
+        results.push(data);
+      }
+    });
+
+    res.status(200).json(results);
+  } catch (error) {
+    res.status(500).send('Error al buscar datos');
+  }
+});
+
 // Inicia el servidor
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
