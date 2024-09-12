@@ -238,6 +238,34 @@ app.post('/agregar-numero-orden', async (req, res) => {
   }
 });
 
+// Ruta para verificar el acceso del usuario
+app.post('/verificar-usuario', async (req, res) => {
+  const { email, valor } = req.body;
+
+  if (!email || !valor) {
+    return res.status(400).json({ message: 'Email y valor son necesarios' });
+  }
+
+  try {
+    const userRef = db.collection('usuario').doc(email);
+    const doc = await userRef.get();
+
+    if (!doc.exists) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+
+    const userData = doc.data();
+    if (userData.valor === valor) {
+      res.status(200).json({ access: true });
+    } else {
+      res.status(403).json({ access: false });
+    }
+  } catch (error) {
+    console.error('Error al verificar el usuario:', error);
+    res.status(500).json({ message: 'Error al verificar el usuario' });
+  }
+});
+
 // Inicia el servidor
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
