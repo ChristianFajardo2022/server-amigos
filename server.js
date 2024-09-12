@@ -165,7 +165,6 @@ app.get('/dijes', async (req, res) => {
   }
 });
 
-
 // Ruta para buscar datos
 app.get('/buscar', async (req, res) => {
   const { term } = req.query;
@@ -186,13 +185,34 @@ app.get('/buscar', async (req, res) => {
         data.contacto.toLowerCase().includes(term.toLowerCase()) ||
         data.nombre.toLowerCase().includes(term.toLowerCase())
       ) {
-        results.push(data);
+        results.push({ ...data, docId: doc.id }); // Añadir el ID del documento
       }
     });
 
     res.status(200).json(results);
   } catch (error) {
     res.status(500).send('Error al buscar datos');
+  }
+});
+
+// Ruta para agregar el número de orden a un documento
+app.post('/agregar-numero-orden', async (req, res) => {
+  const { docId, orderNum } = req.body;
+
+  if (!docId || !orderNum) {
+    return res.status(400).json({ message: 'Faltan datos necesarios' });
+  }
+
+  try {
+    const docRef = db.collection('compras').doc(docId);
+
+    // Actualizar el documento con el número de orden
+    await docRef.update({ numeroOrden: orderNum });
+
+    res.status(200).json({ message: 'Número de orden agregado con éxito' });
+  } catch (error) {
+    console.error('Error al agregar el número de orden:', error.message);
+    res.status(500).json({ message: `Error al agregar el número de orden: ${error.message}` });
   }
 });
 
