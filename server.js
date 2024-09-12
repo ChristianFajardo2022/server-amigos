@@ -239,32 +239,30 @@ app.post('/agregar-numero-orden', async (req, res) => {
 });
 
 // Ruta para verificar el acceso del usuario
+// Endpoint para verificar usuario
 app.post('/verificar-usuario', async (req, res) => {
-  const { email, valor } = req.body;
+  const { usuario, contraseña } = req.body;
 
-  if (!email || !valor) {
-    return res.status(400).json({ message: 'Email y valor son necesarios' });
+  if (!usuario || !contraseña) {
+    return res.status(400).json({ access: false, message: 'Datos incompletos' });
   }
 
   try {
-    const userRef = db.collection('usuario').doc(email);
+    // Aquí deberías implementar la lógica para verificar las credenciales del usuario
+    const userRef = db.collection('usuario').doc(usuario);
     const doc = await userRef.get();
 
-    if (!doc.exists) {
-      return res.status(404).json({ message: 'Usuario no encontrado' });
-    }
-
-    const userData = doc.data();
-    if (userData.valor === valor) {
-      res.status(200).json({ access: true });
+    if (doc.exists && doc.data().contraseña === contraseña) {
+      return res.status(200).json({ access: true });
     } else {
-      res.status(403).json({ access: false });
+      return res.status(401).json({ access: false, message: 'Credenciales incorrectas' });
     }
   } catch (error) {
     console.error('Error al verificar el usuario:', error);
-    res.status(500).json({ message: 'Error al verificar el usuario' });
+    return res.status(500).json({ access: false, message: 'Error interno del servidor' });
   }
 });
+
 
 // Inicia el servidor
 app.listen(port, () => {
