@@ -3,7 +3,6 @@ const multer = require('multer');
 const { db, bucket } = require('./firebaseConfig');
 const { v4: uuidv4 } = require('uuid');
 const cors = require('cors');
-const { Parser } = require('json2csv'); // Para convertir JSON a CSV
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -36,8 +35,33 @@ async function uploadImageToStorage(image) {
   }
 }
 
+// Función para obtener y actualizar el número consecutivo de manera atómica
+async function getConsecutiveNumber() {
+  const docRef = db.collection('consecutivos').doc('ordenCompra'); // Documento que almacena el número consecutivo
+
+  try {
+    const consecutiveNumber = await db.runTransaction(async (transaction) => {
+      const doc = await transaction.get(docRef);
+
+      let nuevoConsecutivo = 1; // Si es la primera vez, comienza en 1
+      if (doc.exists) {
+        nuevoConsecutivo = doc.data().ultimoConsecutivo + 1;
+      }
+
+      // Actualiza el nuevo número consecutivo en el documento
+      transaction.set(docRef, { ultimoConsecutivo: nuevoConsecutivo });
+
+      return nuevoConsecutivo;
+    });
+
+    return consecutiveNumber;
+  } catch (error) {
+    throw new Error('Error al obtener y actualizar el número consecutivo');
+  }
+}
+
 // Función para guardar los datos de la compra en Firestore
-async function savePurchaseData({ usuario, email, contacto, nombre, imageUrl }) {
+async function savePurchaseData({ usuario, email, contacto, nombre, imageUrl, consecutivo }) {
   try {
     await db.collection('compras').add({
       usuario,
@@ -45,6 +69,7 @@ async function savePurchaseData({ usuario, email, contacto, nombre, imageUrl }) 
       contacto,
       nombre,
       imageUrl,
+      consecutivo, // Guardar el número consecutivo
     });
   } catch (error) {
     throw error;
@@ -61,8 +86,14 @@ app.post('/comprar', upload.single('image'), async (req, res) => {
       return res.status(400).send('Faltan datos necesarios para realizar la compra');
     }
 
+    // Obtener el número consecutivo único de manera segura
+    const consecutivo = await getConsecutiveNumber();
+
+    // Subir la imagen a Firebase Storage
     const imageUrl = await uploadImageToStorage(image);
-    await savePurchaseData({ usuario, email, contacto, nombre, imageUrl });
+
+    // Guardar los datos de la compra junto con el número consecutivo
+    await savePurchaseData({ usuario, email: `${email}-${consecutivo}`, contacto, nombre, imageUrl, consecutivo });
 
     res.status(200).send('Compra realizada con éxito');
   } catch (error) {
@@ -100,12 +131,6 @@ app.get('/buscar', async (req, res) => {
   }
 });
 
-
-
-
-
-
-
 // Ruta para descargar los datos en CSV
 app.get('/descargar-csv', async (req, res) => {
   try {
@@ -129,7 +154,6 @@ app.get('/descargar-csv', async (req, res) => {
   }
 });
 
-
 // Ruta para manejar la subida de stockDije
 app.post('/agregar-stock', async (req, res) => {
   const { stockDije } = req.body;
@@ -138,7 +162,7 @@ app.post('/agregar-stock', async (req, res) => {
     return res.status(400).json({ message: 'No se proporcionó el dato stockDije' });
   }
 
-  const documentId = 'numerosdestock'; 
+  const documentId = 'numerosdestock';
 
   try {
     const stockRef = db.collection('stock').doc(documentId);
@@ -160,11 +184,10 @@ app.post('/agregar-stock', async (req, res) => {
   }
 });
 
-
+// Ruta para obtener el stock
 app.get('/dijes', async (req, res) => {
   try {
-   
-    const documentId = 'numerosdestock'; 
+    const documentId = 'numerosdestock';
     const stockRef = db.collection('stock').doc(documentId);
     const docSnapshot = await stockRef.get();
 
@@ -177,27 +200,6 @@ app.get('/dijes', async (req, res) => {
   } catch (error) {
     console.error('Error al buscar datos del stock:', error.message);
     res.status(500).send('Error al buscar datos del stock');
-  }
-});
-
-
-// Ruta para obtener el último número de orden
-app.get('/ultimo-numero', async (req, res) => {
-  try {
-    // Consulta la colección 'compras' para obtener el mayor número
-    const snapshot = await db.collection('compras').orderBy('consecutivo', 'desc').limit(1).get();
-    let ultimoNumero = 0;
-
-    // Verifica si ya existe algún número en la base de datos
-    if (!snapshot.empty) {
-      const doc = snapshot.docs[0];
-      ultimoNumero = doc.data().consecutivo;
-    }
-
-    res.status(200).json({ ultimoNumero });
-  } catch (error) {
-    console.error('Error al obtener el último número consecutivo:', error.message);
-    res.status(500).send('Error al obtener el último número consecutivo');
   }
 });
 
