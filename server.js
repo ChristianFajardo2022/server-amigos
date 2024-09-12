@@ -71,6 +71,7 @@ async function savePurchaseData({ usuario, email, contacto, nombre, imageUrl, co
       nombre,
       imageUrl,
       consecutivo, // Guardar el número consecutivo
+      fechaHora: new Date().toISOString() // Guardar la fecha y hora actual
     });
   } catch (error) {
     throw error;
@@ -160,7 +161,7 @@ app.get('/descargar-csv', async (req, res) => {
       data.push(doc.data());
     });
 
-    const fields = ['usuario', 'email', 'contacto', 'nombre', 'imageUrl'];
+    const fields = ['usuario', 'email', 'contacto', 'nombre', 'imageUrl', 'fechaHora']; // Añadir 'fechaHora' a los campos
     const json2csvParser = new Parser({ fields });
     const csv = json2csvParser.parse(data);
 
