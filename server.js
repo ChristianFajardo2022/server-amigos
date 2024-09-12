@@ -3,6 +3,7 @@ const multer = require('multer');
 const { db, bucket } = require('./firebaseConfig');
 const { v4: uuidv4 } = require('uuid');
 const cors = require('cors');
+const { Parser } = require('json2csv');
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -98,6 +99,24 @@ app.post('/comprar', upload.single('image'), async (req, res) => {
     res.status(200).send('Compra realizada con éxito');
   } catch (error) {
     res.status(500).send('Error al realizar la compra');
+  }
+});
+
+// Ruta para obtener el último número consecutivo
+app.get('/ultimo-numero', async (req, res) => {
+  const docRef = db.collection('consecutivos').doc('ordenCompra');
+
+  try {
+    const doc = await docRef.get();
+    if (!doc.exists) {
+      return res.status(404).json({ message: 'Documento no encontrado' });
+    }
+
+    const data = doc.data();
+    res.status(200).json({ ultimoNumero: data.ultimoConsecutivo });
+  } catch (error) {
+    console.error('Error al obtener el último número consecutivo:', error.message);
+    res.status(500).send('Error al obtener el último número consecutivo');
   }
 });
 
