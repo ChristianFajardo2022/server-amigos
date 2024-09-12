@@ -103,7 +103,7 @@ app.get('/descargar-csv', async (req, res) => {
       data.push(doc.data());
     });
 
-    const fields = ['usuario', 'email', 'contacto', 'nombre', 'imageUrl', 'fechaHora, numeroOrden'];
+    const fields = ['usuario', 'email', 'contacto', 'nombre', 'imageUrl', 'fechaHora', 'numeroOrden'];
     const json2csvParser = new Parser({ fields });
     const csv = json2csvParser.parse(data);
 
