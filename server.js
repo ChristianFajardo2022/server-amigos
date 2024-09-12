@@ -52,6 +52,24 @@ async function savePurchaseData({ usuario, email, contacto, nombre, imageUrl, fe
   }
 }
 
+// Función para convertir la fecha de Firestore a una cadena legible
+const convertDateToReadableFormat = (userData) => {
+  if (userData.createdAt && userData.createdAt.toDate) {
+    const createdAtUTC = userData.createdAt.toDate();
+    const createdAtUTCMinus5 = new Date(createdAtUTC.getTime() - (5 * 60 * 60 * 1000)); // Resta 5 horas (en milisegundos)
+    userData.createdAt = new Intl.DateTimeFormat("en-US", {
+      timeZone: "America/Bogota",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    }).format(createdAtUTCMinus5); // Formatea la fecha en UTC-5
+  }
+  return userData;
+};
+
 // Ruta para manejar la compra
 app.post('/comprar', upload.single('image'), async (req, res) => {
   try {
@@ -84,7 +102,9 @@ app.get('/compras', async (req, res) => {
     const compras = [];
 
     snapshot.forEach((doc) => {
-      compras.push(doc.data());
+      let data = doc.data();
+      data = convertDateToReadableFormat(data); // Convertir la fecha a formato legible
+      compras.push(data);
     });
 
     res.status(200).json(compras);
@@ -100,7 +120,9 @@ app.get('/descargar-csv', async (req, res) => {
     const data = [];
 
     snapshot.forEach((doc) => {
-      data.push(doc.data());
+      let docData = doc.data();
+      docData = convertDateToReadableFormat(docData); // Convertir la fecha a formato legible
+      data.push(docData);
     });
 
     const fields = ['usuario', 'email', 'contacto', 'nombre', 'imageUrl', 'fechaHora', 'numeroOrden'];
