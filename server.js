@@ -36,33 +36,8 @@ async function uploadImageToStorage(image) {
   }
 }
 
-// Función para obtener y actualizar el número consecutivo de manera atómica
-async function getConsecutiveNumber() {
-  const docRef = db.collection('consecutivos').doc('ordenCompra'); // Documento que almacena el número consecutivo
-
-  try {
-    const consecutiveNumber = await db.runTransaction(async (transaction) => {
-      const doc = await transaction.get(docRef);
-
-      let nuevoConsecutivo = 1; // Si es la primera vez, comienza en 1
-      if (doc.exists) {
-        nuevoConsecutivo = doc.data().ultimoConsecutivo + 1;
-      }
-
-      // Actualiza el nuevo número consecutivo en el documento
-      transaction.set(docRef, { ultimoConsecutivo: nuevoConsecutivo });
-
-      return nuevoConsecutivo;
-    });
-
-    return consecutiveNumber;
-  } catch (error) {
-    throw new Error('Error al obtener y actualizar el número consecutivo');
-  }
-}
-
 // Función para guardar los datos de la compra en Firestore
-async function savePurchaseData({ usuario, email, contacto, nombre, imageUrl, consecutivo }) {
+async function savePurchaseData({ usuario, email, contacto, nombre, imageUrl, fechaHora }) {
   try {
     await db.collection('compras').add({
       usuario,
@@ -70,8 +45,7 @@ async function savePurchaseData({ usuario, email, contacto, nombre, imageUrl, co
       contacto,
       nombre,
       imageUrl,
-      consecutivo, // Guardar el número consecutivo
-      fechaHora: new Date().toISOString() // Guardar la fecha y hora actual
+      fechaHora, // Guardar la fecha y hora
     });
   } catch (error) {
     throw error;
@@ -88,14 +62,14 @@ app.post('/comprar', upload.single('image'), async (req, res) => {
       return res.status(400).send('Faltan datos necesarios para realizar la compra');
     }
 
-    // Obtener el número consecutivo único de manera segura
-    const consecutivo = await getConsecutiveNumber();
-
     // Subir la imagen a Firebase Storage
     const imageUrl = await uploadImageToStorage(image);
 
-    // Guardar los datos de la compra junto con el número consecutivo
-    await savePurchaseData({ usuario, email: `${email}-${consecutivo}`, contacto, nombre, imageUrl, consecutivo });
+    // Obtener la fecha y hora actual
+    const fechaHora = new Date().toISOString();
+
+    // Guardar los datos de la compra junto con la fecha y hora
+    await savePurchaseData({ usuario, email, contacto, nombre, imageUrl, fechaHora });
 
     res.status(200).send('Compra realizada con éxito');
   } catch (error) {
@@ -103,51 +77,19 @@ app.post('/comprar', upload.single('image'), async (req, res) => {
   }
 });
 
-// Ruta para obtener el último número consecutivo
-app.get('/ultimo-numero', async (req, res) => {
-  const docRef = db.collection('consecutivos').doc('ordenCompra');
-
-  try {
-    const doc = await docRef.get();
-    if (!doc.exists) {
-      return res.status(404).json({ message: 'Documento no encontrado' });
-    }
-
-    const data = doc.data();
-    res.status(200).json({ ultimoNumero: data.ultimoConsecutivo });
-  } catch (error) {
-    console.error('Error al obtener el último número consecutivo:', error.message);
-    res.status(500).send('Error al obtener el último número consecutivo');
-  }
-});
-
-// Ruta para buscar datos
-app.get('/buscar', async (req, res) => {
-  const { term } = req.query;
-
-  if (!term) {
-    return res.status(400).send('Término de búsqueda no proporcionado');
-  }
-
+// Ruta para obtener los datos de compra
+app.get('/compras', async (req, res) => {
   try {
     const snapshot = await db.collection('compras').get();
-    const results = [];
+    const compras = [];
 
     snapshot.forEach((doc) => {
-      const data = doc.data();
-      if (
-        data.usuario.toLowerCase().includes(term.toLowerCase()) ||
-        data.email.toLowerCase().includes(term.toLowerCase()) ||
-        data.contacto.toLowerCase().includes(term.toLowerCase()) ||
-        data.nombre.toLowerCase().includes(term.toLowerCase())
-      ) {
-        results.push(data);
-      }
+      compras.push(doc.data());
     });
 
-    res.status(200).json(results);
+    res.status(200).json(compras);
   } catch (error) {
-    res.status(500).send('Error al buscar datos');
+    res.status(500).send('Error al obtener los datos de compra');
   }
 });
 
@@ -161,7 +103,7 @@ app.get('/descargar-csv', async (req, res) => {
       data.push(doc.data());
     });
 
-    const fields = ['usuario', 'email', 'contacto', 'nombre', 'imageUrl', 'fechaHora']; // Añadir 'fechaHora' a los campos
+    const fields = ['usuario', 'email', 'contacto', 'nombre', 'imageUrl', 'fechaHora'];
     const json2csvParser = new Parser({ fields });
     const csv = json2csvParser.parse(data);
 
