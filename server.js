@@ -163,7 +163,7 @@ app.post('/agregar-stock', async (req, res) => {
 
 app.get('/dijes', async (req, res) => {
   try {
-    // Reemplaza 'numerosdestock' con el ID del documento específico si es necesario
+   
     const documentId = 'numerosdestock'; 
     const stockRef = db.collection('stock').doc(documentId);
     const docSnapshot = await stockRef.get();
@@ -180,6 +180,26 @@ app.get('/dijes', async (req, res) => {
   }
 });
 
+
+// Ruta para obtener el último número de orden
+app.get('/ultimo-numero', async (req, res) => {
+  try {
+    // Consulta la colección 'compras' para obtener el mayor número
+    const snapshot = await db.collection('compras').orderBy('consecutivo', 'desc').limit(1).get();
+    let ultimoNumero = 0;
+
+    // Verifica si ya existe algún número en la base de datos
+    if (!snapshot.empty) {
+      const doc = snapshot.docs[0];
+      ultimoNumero = doc.data().consecutivo;
+    }
+
+    res.status(200).json({ ultimoNumero });
+  } catch (error) {
+    console.error('Error al obtener el último número consecutivo:', error.message);
+    res.status(500).send('Error al obtener el último número consecutivo');
+  }
+});
 
 // Inicia el servidor
 app.listen(port, () => {
