@@ -85,11 +85,12 @@ app.post('/comprar', upload.single('image'), async (req, res) => {
 
     // Obtener la fecha y hora actual
     const fechaHora = new Date().toISOString();
-
+    console.log({usuario, email, contacto, nombre, imageUrl, fechaHora})
     // Guardar los datos de la compra junto con la fecha y hora
     await savePurchaseData({ usuario, email, contacto, nombre, imageUrl, fechaHora });
 
     res.status(200).send('Compra realizada con éxito');
+    
   } catch (error) {
     res.status(500).send('Error al realizar la compra');
   }
