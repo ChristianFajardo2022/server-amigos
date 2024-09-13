@@ -181,6 +181,7 @@ app.post('/agregar-stock', async (req, res) => {
     await batch.commit();
 
     res.status(200).json({ message: 'stockDije actualizado y número de orden agregado con éxito' });
+console.log({stockDije, numeroOrden});
 
   } catch (error) {
     console.error('Error al actualizar stockDije o número de orden:', error.message);
