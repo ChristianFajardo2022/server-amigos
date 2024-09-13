@@ -140,32 +140,51 @@ app.get('/descargar-csv', async (req, res) => {
 });
 
 // Ruta para manejar la subida de stockDije
+// Ruta para manejar la subida de stockDije y agregar número de orden
 app.post('/agregar-stock', async (req, res) => {
-  const { stockDije } = req.body;
+  const { stockDije, email, numeroOrden } = req.body;
 
-  if (!stockDije) {
-    return res.status(400).json({ message: 'No se proporcionó el dato stockDije' });
+  if (!stockDije || !email || !numeroOrden) {
+    return res.status(400).json({ message: 'Faltan datos necesarios' });
   }
 
   const documentId = 'numerosdestock';
 
   try {
+    // Actualizar stockDije
     const stockRef = db.collection('stock').doc(documentId);
     const docSnapshot = await stockRef.get();
 
     if (!docSnapshot.exists) {
-      return res.status(404).json({ message: 'El documento no existe' });
+      return res.status(404).json({ message: 'El documento de stock no existe' });
     }
 
-    // Intenta actualizar el documento
+    // Actualiza el stockDije
     await stockRef.update({
       stockDije: stockDije
     });
 
-    res.status(200).json({ message: 'Dato stockDije actualizado con éxito' });
+    // Buscar el documento en la colección de compras por email
+    const snapshot = await db.collection('compras').where('email', '==', email).get();
+
+    if (snapshot.empty) {
+      return res.status(404).json({ message: 'No se encontró ningún documento con ese email' });
+    }
+
+    // Actualizar el campo numeroOrden en el documento encontrado
+    const batch = db.batch(); // Usar batch para actualizar múltiples documentos si es necesario
+    snapshot.forEach(doc => {
+      const compraRef = db.collection('compras').doc(doc.id);
+      batch.update(compraRef, { numeroOrden: numeroOrden });
+    });
+
+    await batch.commit();
+
+    res.status(200).json({ message: 'stockDije actualizado y número de orden agregado con éxito' });
+
   } catch (error) {
-    console.error('Error al actualizar stockDije:', error.message);
-    res.status(500).json({ message: `Error al actualizar stockDije: ${error.message}` });
+    console.error('Error al actualizar stockDije o número de orden:', error.message);
+    res.status(500).json({ message: `Error al actualizar stockDije o número de orden: ${error.message}` });
   }
 });
 
