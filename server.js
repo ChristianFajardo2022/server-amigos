@@ -83,18 +83,32 @@ app.post('/comprar', upload.single('image'), async (req, res) => {
     // Subir la imagen a Firebase Storage
     const imageUrl = await uploadImageToStorage(image);
 
-    // Obtener la fecha y hora actual
-    const fechaHora = new Date().toISOString();
-    console.log({usuario, email, contacto, nombre, imageUrl, fechaHora})
-    // Guardar los datos de la compra junto con la fecha y hora
-    await savePurchaseData({ usuario, email, contacto, nombre, imageUrl, fechaHora });
+    // Obtener la fecha y hora actual en UTC
+    let fechaHoraUTC = new Date();
+
+    // Restar 5 horas para convertir a UTC-5 (Bogotá)
+    fechaHoraUTC.setHours(fechaHoraUTC.getHours());
+
+    // Formatear la fecha y hora en una cadena legible
+    const fechaHoraLegible = new Intl.DateTimeFormat("en-US", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit"
+    }).format(fechaHoraUTC);
+
+    // Guardar los datos de la compra junto con la fecha y hora ajustada
+    await savePurchaseData({ usuario, email, contacto, nombre, imageUrl, fechaHora: fechaHoraLegible });
 
     res.status(200).send('Compra realizada con éxito');
-    
+
   } catch (error) {
     res.status(500).send('Error al realizar la compra');
   }
 });
+
 
 // Ruta para obtener los datos de compra
 app.get('/compras', async (req, res) => {
