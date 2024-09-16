@@ -103,7 +103,7 @@ app.post('/comprar', upload.single('image'), async (req, res) => {
     await savePurchaseData({ usuario, email, contacto, nombre, imageUrl, fechaHora: fechaHoraLegible });
 
     res.status(200).send('Compra realizada con éxito');
-
+console.log({usuario, email, contacto, nombre, fechaHora: fechaHoraLegible});
   } catch (error) {
     res.status(500).send('Error al realizar la compra');
   }
